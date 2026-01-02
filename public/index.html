@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Neon Snake Online</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="lang-switch" onclick="toggleLanguage()">🇬🇧 EN</div>
+
+    <div class="game-wrapper">
+        <div class="hud">
+            <div class="player-score">
+                <span id="p1-name" style="font-size:12px; color:#aaa">P1</span>
+                <span class="score-big" id="s1" style="color:#39ff14">0</span>
+            </div>
+            <div class="player-score">
+                <span id="p2-name" style="font-size:12px; color:#aaa">P2</span>
+                <span class="score-big" id="s2" style="color:#00ffff">0</span>
+            </div>
+        </div>
+
+        <canvas id="gc" width="600" height="600"></canvas>
+        <div id="countdown-overlay">5</div>
+
+        <div class="log-panel">
+            <div id="game-status" data-key="STATUS_WAITING">Waiting...</div>
+        </div>
+
+        <div id="menu-overlay" class="overlay">
+            
+            <div id="view-auth" class="active" style="display:flex; flex-direction:column; align-items:center; width:100%">
+                <h1 data-key="TITLE">NEON SNAKE</h1>
+                <div class="auth-box">
+                    <div class="auth-tabs">
+                        <button class="tab-btn active" id="tab-login" onclick="switchAuthTab('login')" data-key="BTN_LOGIN">LOGIN</button>
+                        <button class="tab-btn" id="tab-register" onclick="switchAuthTab('register')" data-key="BTN_REGISTER">REGISTER</button>
+                    </div>
+                    <div id="form-login">
+                        <input type="text" id="login-user" placeholder="USERNAME" data-ph="PH_USER">
+                        <input type="password" id="login-pass" placeholder="PASSWORD" data-ph="PH_PASS">
+                        <div class="error-msg" id="login-error"></div>
+                        <button class="btn-create" onclick="doLogin()" data-key="BTN_ENTER">ENTER</button>
+                    </div>
+                    <div id="form-register" class="hidden">
+                        <input type="text" id="reg-user" placeholder="USERNAME" data-ph="PH_USER">
+                        <input type="password" id="reg-pass" placeholder="PASSWORD" data-ph="PH_PASS">
+                        <input type="password" id="reg-pass2" placeholder="REPEAT PASSWORD" data-ph="PH_PASS2">
+                        <div class="error-msg" id="reg-error"></div>
+                        <button class="btn-create" onclick="doRegister()" data-key="BTN_REGISTER">REGISTER</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-lobby" class="hidden" style="display:flex; flex-direction:column; align-items:center; width:100%">
+                <h2 id="welcome-msg">Welcome!</h2>
+                <div id="my-elo-display" style="color: #f1c40f; font-weight: bold; margin-bottom: 10px;">ELO: 1000</div>
+                
+                <div class="design-box">
+                    <div class="design-col">
+                        <label data-key="BODY">Body</label>
+                        <input type="color" id="inp-body" value="#39ff14" onchange="saveDesign()">
+                    </div>
+                    <div class="design-col">
+                        <label data-key="EYES">Eyes</label>
+                        <input type="color" id="inp-eye" value="#000000" onchange="saveDesign()">
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="s-item">
+                        <label data-key="LBL_SPEED">Speed</label>
+                        <select id="set-fps">
+                            <option value="7" data-key="OPT_SLOW">Slow</option>
+                            <option value="10" selected data-key="OPT_NORMAL">Normal</option>
+                            <option value="15" data-key="OPT_FAST">Fast</option>
+                        </select>
+                    </div>
+                    <div class="s-item">
+                        <label data-key="LBL_SIZE">Size</label>
+                        <select id="set-size">
+                            <option value="15" data-key="OPT_SMALL">Small</option>
+                            <option value="25" selected data-key="OPT_MEDIUM">Medium</option>
+                            <option value="40" data-key="OPT_LARGE">Large</option>
+                        </select>
+                    </div>
+                    <div class="s-item">
+                        <label data-key="LBL_GOAL">Goal</label>
+                        <select id="set-goal">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                    <div class="s-item">
+                        <label data-key="LBL_PENALTY">Penalty</label>
+                        <select id="set-penalty">
+                            <option value="2" data-key="OPT_HALF">Half</option>
+                            <option value="3" data-key="OPT_THIRD">Third</option>
+                            <option value="4" data-key="OPT_QUARTER">Quarter</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-create" onclick="createRoom()" data-key="BTN_CREATE">CREATE GAME</button>
+                <div style="width:90%; display:flex; justify-content:space-between;">
+                    <button class="btn-history" onclick="loadProfile()" data-key="BTN_PROFILE">PROFILE</button>
+                    <button class="btn-history" onclick="loadLeaderboard()" data-key="BTN_LEADERS">LEADERS</button>
+                    <button class="btn-history" onclick="loadHistory()" data-key="BTN_HISTORY">HISTORY</button>
+                </div>
+                
+                <div style="width:90%; border-bottom:1px solid #333; margin:15px 0;"></div>
+                <div style="font-size:12px; color:#777; margin-bottom:5px;" data-key="LBL_ROOMS">AVAILABLE ROOMS:</div>
+                <div id="room-list">Loading...</div>
+                
+                <button class="btn-join btn-back" onclick="logout()" data-key="BTN_LOGOUT" style="margin-top:10px;">LOGOUT</button>
+            </div>
+
+            <div id="view-list" class="hidden" style="display:flex; flex-direction:column; align-items:center; width:100%">
+                <h2 id="list-title">LIST</h2>
+                
+                <div id="profile-stats" class="hidden" style="text-align:center; margin-bottom:15px;">
+                    <div style="font-size:12px; color:#aaa;" data-key="LBL_ELO">CURRENT RATING</div>
+                    <div id="profile-elo" style="font-size:40px; color:#f1c40f; font-weight:900;">1000</div>
+                </div>
+
+                <div class="history-wrapper">
+                    <table class="history-table">
+                        <thead id="list-head"></thead>
+                        <tbody id="list-body"></tbody>
+                    </table>
+                </div>
+                <button class="btn-join btn-back" onclick="switchView('view-lobby')" data-key="BTN_BACK">BACK</button>
+            </div>
+
+            <div id="view-waiting" class="hidden" style="display:flex; flex-direction:column; align-items:center;">
+                <h2 data-key="WAITING_TITLE">WAITING</h2>
+                <div id="display-room-id" style="font-size:40px; color:#39ff14; font-weight:900; letter-spacing:3px; margin-bottom:30px;">...</div>
+                <div id="waiting-text" style="color:yellow; animation: blink 1s infinite;" data-key="WAITING_STATUS">Waiting...</div>
+            </div>
+
+            <div id="view-gameover" class="hidden" style="display:flex; flex-direction:column; align-items:center;">
+                <h2 style="color:red" data-key="GAMEOVER_TITLE">GAME OVER</h2>
+                <div id="win-msg"></div>
+                <div id="elo-msg"></div>
+                <button class="btn-create" onclick="location.reload()" data-key="BTN_MENU">MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>
